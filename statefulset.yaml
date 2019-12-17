@@ -21,33 +21,21 @@ roleRef:
   kind: ClusterRole
   name: cluster-admin
   apiGroup: rbac.authorization.k8s.io
----
-apiVersion: storage.k8s.io/v1
-kind: StorageClass
-metadata:
-  labels:
-    kubernetes.io/cluster-service: "true"
-  name: fast
-parameters:
-  cachingmode: ReadOnly
-  kind: Managed
-  storageaccounttype: Premium_LRS
-provisioner: kubernetes.io/azure-disk
-reclaimPolicy: Delete
-volumeBindingMode: Immediate
 --- 
 apiVersion: v1
 kind: Service
 metadata:
   name: mongo
   namespace: mongo
-spec: 
-  ports: 
-    - port: 27017
-      targetPort: 27017
-  selector: 
+  labels:
+    name: mongo
+spec:
+  ports:
+  - port: 27017
+    targetPort: 27017
+  clusterIP: None
+  selector:
     role: mongo
-  type: LoadBalancer
 ---
 apiVersion: apps/v1beta1
 kind: StatefulSet
@@ -61,7 +49,7 @@ spec:
     metadata:
       labels:
         role: mongo
-        environment: test
+        environment: staging
         replicaset: MainRepSet
     spec:
       affinity:
@@ -102,7 +90,7 @@ spec:
           image: cvallance/mongo-k8s-sidecar
           env:
             - name: MONGO_SIDECAR_POD_LABELS
-              value: "role=mongo,environment=test"
+              value: "role=mongo,environment=staging"
             - name: KUBE_NAMESPACE
               value: "mongo"
             - name: KUBERNETES_MONGO_SERVICE_NAME
